@@ -34,7 +34,8 @@ The tools validate against fixed lists. **Read the resources first** instead of 
 - `list_generators` — the real generator IDs (they are **kebab-case**: `pickup-coin`, `laser-shoot`,
   `explosion`, `powerup`, `hit-hurt`, `jump`, `blip-select`, `randomize`, `tone`).
 - `param_reference` — every `SfxParams` field, its range, and meaning, plus the waveType map.
-- `list_effects` — the effects and their parameters.
+- `list_effects` — each effect's params with their **type, range, unit, and default** (e.g. delay
+  `timeMs` is in ms over 1–1000, phaser `stages` is an int 2–12). Read it before setting effect params.
 
 If a generator/effect name is rejected, the error lists the valid options — use them, don't keep
 guessing. (A wrong guess like `pickup_coin` should immediately tell you the real `pickup-coin`.)
@@ -61,9 +62,17 @@ with the tools. Hand-written `id`s must be real UUIDs, which is friction you avo
 5. **Audition** — `render_wav(sound, name)` writes a WAV and returns duration + peak. Judge by those
    and by ear; `describe(sound)` gives a readable summary.
 6. **Save** — `save(sound, name)` writes the JSON into the user's MJSFX library (it appears in the app).
+7. **Reload** (across turns/sessions) — `list_sounds()` lists saved names; `load(name)` returns a saved
+   sound so you can keep iterating on it later without re-deriving it.
 
 A typical reply: generate → set a few params → render_wav so the user can hear it → save. Render early
 so there's something to listen to; don't just describe.
+
+**Loudness — balance a family with `normalize`.** When you make several sounds meant to sit together
+(a UI set, a weapon family), their raw peaks vary a lot. `normalize(sound, targetPeak)` sets the sound's
+master gain so its rendered peak hits `targetPeak` (default 0.8). Normalize each to the **same**
+`targetPeak` before saving so they're consistently loud. It returns the updated sound — chain it into
+`save`/`render_wav` like any other transform.
 
 ## Character recipes — what makes each sound read as itself
 
@@ -113,6 +122,8 @@ texture), `distortion`, `tremolo`, `phaser`, `delay`, `reverb` (space/chime tail
 is `"main"` (whole sound) or a **layer index** (one voice). Order = signal flow. `set_effect` /
 `remove_effect` edit the chain. Use the **exact param names from `list_effects`** (e.g. reverb is
 `mix`/`size`/`damping`/`decay`, not `wet`/`roomSize`) — wrong names now error with the valid list.
+`list_effects` also gives each param's range and unit, so set ms/Hz values (delay `timeMs`, tremolo
+`rate`) in real units, not 0–1.
 Effects are active when added; pass `enabled: 0` to add one bypassed. Integer-typed params
 (`bitcrush.downsample`, `phaser.stages`) expect whole numbers.
 
