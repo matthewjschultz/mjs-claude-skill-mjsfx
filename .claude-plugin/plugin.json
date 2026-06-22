@@ -1,0 +1,12 @@
+{
+  "name": "mjsfx-sound-design",
+  "description": "Design retro / 8-bit game sound effects (and invent original ones) with the MJSFX app through its MCP tools — coins, lasers, explosions, jumps, power-ups, UI blips, cohesive sound families, and experimental textures",
+  "version": "1.0.0",
+  "author": {
+    "name": "Matthew Schultz"
+  },
+  "homepage": "https://mjsfx.app",
+  "repository": "https://github.com/matthewjschultz/mjs-claude-skill-mjsfx",
+  "license": "MIT",
+  "keywords": ["mjsfx", "sound-design", "sfx", "8-bit", "chiptune", "game-audio", "mcp", "sound-effects"]
+}
