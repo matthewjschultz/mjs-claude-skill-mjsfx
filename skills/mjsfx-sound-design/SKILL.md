@@ -61,7 +61,7 @@ with the tools. Hand-written `id`s must be real UUIDs, which is friction you avo
    layer index.
 5. **Audition** — `render_wav(sound, name)` writes a WAV and returns duration + peak. Judge by those
    and by ear; `describe(sound)` gives a readable summary.
-6. **Save** — `save(sound, name)` writes the JSON into the user's MJSFX library (it appears in the app).
+6. **Save** — `save(sound, name)` writes a `.mjsfx` file into the user's MJSFX library (it appears in the app).
 7. **Reload** (across turns/sessions) — `list_sounds()` lists saved names; `load(name)` returns a saved
    sound so you can keep iterating on it later without re-deriving it.
 
@@ -183,6 +183,6 @@ of graded variants (e.g. brighter vs richer) and say which fits which use (routi
 ## Good defaults for replies
 
 - Render a WAV so the user can actually hear it; report the path + duration.
-- Save the JSON so it lands in their MJSFX library for further tweaking.
+- Save the sound (a `.mjsfx` file) so it lands in their MJSFX library for further tweaking.
 - Explain the *why* behind the params you moved (briefly) — it teaches and it's checkable.
 - Offer next steps (variants, a family, a different timbre) rather than stopping dead.
