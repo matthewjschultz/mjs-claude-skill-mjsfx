@@ -62,8 +62,14 @@ with the tools. Hand-written `id`s must be real UUIDs, which is friction you avo
 5. **Audition** — `render_wav(sound, name)` writes a WAV and returns duration + peak. Judge by those
    and by ear; `describe(sound)` gives a readable summary.
 6. **Save** — `save(sound, name)` writes a `.mjsfx` file into the user's MJSFX library (it appears in the app).
+   From app v1.15 the save contract changed: saving an existing name **dedupes by default** ("coin" →
+   "coin 2") instead of overwriting; pass `overwrite: true` to update a sound in place. So the iterate
+   loop is: first save plain, then re-saves of the same sound use `overwrite: true` (otherwise you
+   accumulate "name 2", "name 3" files). On v1.14-and-earlier servers `overwrite` doesn't exist and
+   save overwrites silently — if the param is rejected, you're on the old server; just save plain.
 7. **Reload** (across turns/sessions) — `list_sounds()` lists saved names; `load(name)` returns a saved
-   sound so you can keep iterating on it later without re-deriving it.
+   sound so you can keep iterating on it later without re-deriving it. (From v1.15, `load` returns the
+   sound's `name` synced to its filename stem — trust it as the re-save target.)
 
 A typical reply: generate → set a few params → render_wav so the user can hear it → save. Render early
 so there's something to listen to; don't just describe.
@@ -127,6 +133,39 @@ is `"main"` (whole sound) or a **layer index** (one voice). Order = signal flow.
 Effects are active when added; pass `enabled: 0` to add one bypassed. Integer-typed params
 (`bitcrush.downsample`, `phaser.stages`) expect whole numbers.
 
+## Modulation — LFOs (movement over time)
+
+Static sounds read as flat; the ones that feel alive **move**. An LFO drives a parameter up and down
+over the sound's life — vibrato, tremolo, filter wub, PWM, a pitch dive, a shimmering tail. Four tools:
+`add_lfo` / `set_lfo` / `remove_lfo` / `list_lfos`, attached to a **layer index** (`"0"`, `"1"`, …) or
+the whole sound (`"main"`). Every LFO gets a UUID — read it from `list_lfos` to edit or route it.
+
+What to reach for (the `target` address routes the LFO's output within that layer):
+- **`source.baseFreq`** — vibrato (slow sine, small depth) or a pitch dive/rise (one-shot, big depth).
+- **`source.duty`** on a square — PWM, that hollow sweeping buzz.
+- **`source.lpfFreq`** — filter wobble ("wub") or an opening sweep.
+- **`gain`** — tremolo (sine) or a stutter/gate (fast square).
+- **`fx.<unitId>.<key>`** — modulate an effect itself: wobble a phaser, swell a reverb `mix`, drift a
+  delay `timeMs`. Get `<unitId>` from `list_fx`.
+
+Fields that matter for craft (full table in the MCP guide's **"LFO modulation"**):
+- **`rateMode`** — `hz` for an absolute speed; **`cycles`** ties the rate to the sound's length, so a
+  sweep lands exactly once (or N times) regardless of duration.
+- **`cycleMode: "oneShot"`** runs the shape once then holds — an envelope-synced sweep or a single
+  pitch drop — vs `loop` for ongoing wobble/tremolo.
+- **`shape`** — `sine` (smooth), `square` (gate/stutter), `sampleHold` (random steps, bleepy arps),
+  `sawUp`/`sawDown` (ramps).
+- **`depth`** is signed −2…2; ±1 is already a full swing for gain/FX/master (more over-drives them),
+  bigger depths buy extra pitch range. Set **`enabled: 1`** to activate (LFOs add disabled).
+
+**LFOs can modulate each other** — route one to another's `rate`/`depth`/`phase` (`mod.<modId>.rate`,
+`<modId>` from `list_lfos`). A slow LFO sweeping a fast one's rate gives evolving, never-quite-repeating
+motion — the difference between a sound and a *texture*. Reach for it on anything meant to feel organic
+or alien. LFOs persist in the saved sound (part of the design, not a render-time setting).
+
+When a request implies motion — "wobbly", "warbly", "throbbing", "shimmering", "alive", "evolving",
+"siren", "laser sweep" — it's an LFO, not just a static patch.
+
 ## Inventing new sounds — the real point
 
 Reproducing the canon is table stakes. The reason to have a tireless AI sound designer is to make
@@ -161,6 +200,14 @@ Techniques that actually find new sounds:
 - **Transform with effects.** `bitcrush`, `phaser`, `distortion`, `delay`, `reverb` turn a plain tone
   alien. Chain them, apply per-layer, push them harder than "tasteful" — FX is where a boring source
   becomes a signature.
+- **Modulate for motion.** Static params freeze a sound in one shape; a moving param makes it evolve
+  across its own duration — vibrato, a PWM sweep, filter wub, a pitch dive that lands exactly at the
+  end (`cycleMode: "oneShot"` + `rateMode: "cycles"` ties the sweep to the sound's length so it feels
+  composed, not random). The real invention lever is **LFO→LFO**: route a slow modulator to another's
+  `rate` or `depth` and the two drift against each other, generating motion that never quite repeats —
+  closer to a living texture than a sample. `sampleHold` gives random stepped pitch jumps for glitch
+  and disorder. Push these past tasteful: a deep pitch LFO on a noise layer reads as something
+  breathing; a fast filter LFO on a square reads like a machine malfunctioning.
 - **Design from a feeling, not a category.** "ominous", "juicy", "glassy", "broken machine",
   "underwater" — translate the adjective into params (inharmonic layers + slow attack = ominous; short
   + punchy + bright = juicy; high sine + long reverb = glassy) instead of grabbing the nearest preset.
