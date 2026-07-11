@@ -146,7 +146,7 @@ What to reach for (the `target` address routes the LFO's output within that laye
 - **`source.lpfFreq`** — filter wobble ("wub") or an opening sweep.
 - **`gain`** — tremolo (sine) or a stutter/gate (fast square).
 - **`fx.<unitId>.<key>`** — modulate an effect itself: wobble a phaser, swell a reverb `mix`, drift a
-  delay `timeMs`. Get `<unitId>` from `list_fx`.
+  delay `timeMs`. Read `<unitId>` from the sound JSON (each FX unit's `id` field in `fx.units`).
 
 Fields that matter for craft (full table in the MCP guide's **"LFO modulation"**):
 - **`rateMode`** — `hz` for an absolute speed; **`cycles`** ties the rate to the sound's length, so a
