@@ -36,6 +36,9 @@ The tools validate against fixed lists. **Read the resources first** instead of 
 - `param_reference` — every `SfxParams` field, its range, and meaning, plus the waveType map.
 - `list_effects` — each effect's params with their **type, range, unit, and default** (e.g. delay
   `timeMs` is in ms over 1–1000, phaser `stages` is an int 2–12). Read it before setting effect params.
+- `exemplars` — an annotated **real composition** showing the architecture that makes invented
+  sounds read as alive (per-layer FX chains, LFOs on FX params, staggered entrances). Read it
+  before designing anything beyond a stock preset — one exemplar teaches what pages of prose don't.
 
 If a generator/effect name is rejected, the error lists the valid options — use them, don't keep
 guessing. (A wrong guess like `pickup_coin` should immediately tell you the real `pickup-coin`.)
@@ -133,6 +136,12 @@ is `"main"` (whole sound) or a **layer index** (one voice). Order = signal flow.
 Effects are active when added; pass `enabled: 0` to add one bypassed. Integer-typed params
 (`bitcrush.downsample`, `phaser.stages`) expect whole numbers.
 
+Two habits that separate flat results from deep ones: **put FX on layers, not the main bus** — a
+main-bus chain processes every voice identically (a blunt instrument), while per-layer chains let
+each voice occupy its own sonic space; and **use a per-layer `adsr` unit for articulation** — it
+re-shapes that voice's amplitude *after* synthesis, finer than the source envelope allows, and a
+long `release` gives a voice its own tail.
+
 ## Modulation — LFOs (movement over time)
 
 Static sounds read as flat; the ones that feel alive **move**. An LFO drives a parameter up and down
@@ -173,6 +182,12 @@ sounds that **don't have names yet** — and you can audition 30 variants in the
 three. When the user wants something "new", "original", "weird", "unique", or "surprise me" — and
 even when they just asked for a stock sound — shift from recipe-following to exploration and offer the
 off-recipe option. Be bold and generative; a safe preset is the least interesting thing you can return.
+
+**First: read the `exemplars` resource.** It is a real composition that already solves the "how do I
+make something sound intentional, not preset-shaped" problem — four voices, each with its own FX
+chain, LFOs animating the *effects* (a bitcrush's `jitter` and `bits`, a filter sweep), per-layer
+`adsr` articulation, staggered entrances. Movement in the **processing** is what reads as alive;
+static FX on a single source is what reads as basic. Steal its architecture, not its params.
 
 Techniques that actually find new sounds:
 
