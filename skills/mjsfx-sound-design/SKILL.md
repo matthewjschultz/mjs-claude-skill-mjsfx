@@ -127,7 +127,9 @@ This is exactly how MJSFX recreates layered game sounds — lean on it for anyth
 ## Effects
 
 `add_effect(sound, target, effect, params)` — effects: `bitcrush` (grittier/lower-fi, that console
-texture), `distortion`, `tremolo`, `phaser`, `delay`, `reverb` (space/chime tail), `adsr`. `target`
+texture), `distortion`, `tremolo`, `phaser`, `delay`, `reverb` (space/chime tail), `reverse`
+(plays the buffer backwards; place AFTER a delay/reverb to reverse their tails — swelling
+pre-echoes, reversed-cymbal energy), `adsr`. `target`
 is `"main"` (whole sound) or a **layer index** (one voice). Order = signal flow. `set_effect` /
 `remove_effect` edit the chain. Use the **exact param names from `list_effects`** (e.g. reverb is
 `mix`/`size`/`damping`/`decay`, not `wet`/`roomSize`) — wrong names now error with the valid list.
