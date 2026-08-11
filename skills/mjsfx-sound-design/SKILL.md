@@ -164,14 +164,18 @@ Fields that matter for craft (full table in the MCP guide's **"LFO modulation"**
   sweep lands exactly once (or N times) regardless of duration.
 - **`cycleMode: "oneShot"`** runs the shape once then holds — an envelope-synced sweep or a single
   pitch drop — vs `loop` for ongoing wobble/tremolo.
+- **`holdEnabled` + `holdPoint`** (v1.38+) — freeze the LFO at a fraction of the sound (0–1) and it
+  keeps that value: a wub that locks mid-wobble, a filter sweep that opens and *stays* open. Works in
+  `loop` too, and composes with `oneShot` — whichever limit lands first wins.
 - **`shape`** — `sine` (smooth), `square` (gate/stutter), `sampleHold` (random steps, bleepy arps),
   `sawUp`/`sawDown` (ramps).
 - **`depth`** is signed −2…2; ±1 is already a full swing for gain/FX/master (more over-drives them),
   bigger depths buy extra pitch range. Set **`enabled: 1`** to activate (LFOs add disabled).
 
-**LFOs can modulate each other** — route one to another's `rate`/`depth`/`phase` (`mod.<modId>.rate`,
+**LFOs can modulate each other** — route one to another's `rate`/`depth`/`phase`/`holdPoint` (`mod.<modId>.rate`,
 `<modId>` from `list_lfos`). A slow LFO sweeping a fast one's rate gives evolving, never-quite-repeating
-motion — the difference between a sound and a *texture*. Reach for it on anything meant to feel organic
+motion — the difference between a sound and a *texture*. Driving `holdPoint` is the strangest of the
+four: the held LFO un-freezes and re-freezes as the driver drags the freeze point around. Reach for it on anything meant to feel organic
 or alien. LFOs persist in the saved sound (part of the design, not a render-time setting).
 
 When a request implies motion — "wobbly", "warbly", "throbbing", "shimmering", "alive", "evolving",
