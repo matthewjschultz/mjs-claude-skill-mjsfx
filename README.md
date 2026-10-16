@@ -30,3 +30,7 @@ Via the marketplace (`matthewjschultz/mjs-claude-skills`):
   extended palette, layering unrelated voices, FX as transformation, design-from-a-feeling).
 
 Canonical source lives with the app's MCP server in the MJSFX repo; this repo is the published plugin.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
