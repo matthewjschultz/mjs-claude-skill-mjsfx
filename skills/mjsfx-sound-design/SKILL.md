@@ -1,7 +1,7 @@
 ---
 name: mjsfx-sound-design
 description: >-
-  Design retro / 8-bit game sound effects with MJSFX through its MCP tools — coins, lasers,
+  Design retro / 8-bit sounds and effects with MJSFX through its MCP tools — coins, lasers,
   explosions, jumps, power-ups, hits, UI blips, and cohesive sound families. Use this whenever the
   user wants to create, generate, or design game / arcade / retro SFX through MJSFX (e.g. "make a coin
   pickup", "I need a laser and an explosion for my game", "design a sound palette for my platformer",
@@ -13,7 +13,7 @@ description: >-
   "never heard before", or just "surprise me", not only a stock effect.
 ---
 
-# Designing game sound effects with MJSFX
+# Designing sounds and effects with MJSFX
 
 MJSFX exposes its synthesis engine over MCP. The tools are dumb primitives — **you are the sound
 designer.** Work in two modes: **reproduce** the known game-SFX vocabulary on request (coin, laser,
@@ -111,6 +111,51 @@ the character.** The "why" matters more than exact numbers — explain it as you
   single pitch. Removing the arp is the point — it reads as a tick, not a reward.
 
 Direction of pitch is near-universal grammar: **up = positive/reward, down = damage/loss.**
+
+## Engines: sfxr and Subtractive
+
+Every layer has ONE source engine: `sfxr` (the default; everything above) or `subtractive`. Choose it
+when the layer is created: `blank_sound(engine: "subtractive")` or `random_sound(engine: "subtractive")`.
+A layer's engine is fixed once the layer exists, and there is no tool that changes it. To mix engines,
+add layers (`compose` keeps each input layer's engine).
+
+**What Subtractive is for.** A clean single-oscillator tone set in real units (Hz and seconds), with an
+exponential decay and an optional pitch sweep. Reach for it for clean one-shots: UI blips, chimes, sine
+thumps, tonal hits, and pure pitch sweeps. Stay on sfxr for chip character: slides, arpeggios, filters,
+noise, duty cycle, and retro grit. Subtractive has no filter, noise, or arpeggio yet.
+
+**Its params** (read `param_reference`, section "Engine: subtractive", for the live ranges):
+- `waveform`: 0 sine, 1 square, 2 triangle, 3 sawtooth.
+- `frequency` (10 to 20000 Hz) and `duration` (0.001 to 10 s). `volume` is linear, 0 to 1 (default 0.2).
+- Envelope: with `endLevelOn` 0 the sound decays 60 dB over `duration`. With `endLevelOn` 1, `endLevel`
+  is the absolute level it reaches at the end, independent of `volume`; above `volume` it swells.
+- Sweep: with `sweepOn` 1, the pitch glides exponentially (equal octaves per second) from `frequency`
+  to `frequencyEnd` over `sweepTime`, then holds. Keep `sweepTime` at or under `duration`, or the glide
+  never finishes before the sound does.
+- The switches (`endLevelOn`, `sweepOn`) take 0 or 1. `set_params` validates keys and clamps ranges
+  against the layer's own engine, so an sfxr key such as `baseFreq` is rejected on a Subtractive layer;
+  call `describe` to see the layer's keys and values.
+
+**Starting points.** Each is a one-layer `blank_sound(engine: "subtractive")` followed by `set_params`.
+Treat them as places to start and judge by ear and by the `render_wav` peak:
+- **UI blip**: `waveform` 0, `frequency` 1200, `duration` 0.08, `volume` 0.3. The default decay makes it
+  a tick; raise `frequency` for lighter, shorten `duration` for snappier.
+- **Chime**: `waveform` 0, `frequency` 880, `duration` 0.6, `volume` 0.25. Layer a second voice a
+  perfect fifth up (`frequency` 1320, `volume` 0.12) for a brighter bell.
+- **Sine thump**: `waveform` 0, `frequency` 160, `sweepOn` 1, `frequencyEnd` 45, `sweepTime` 0.12,
+  `duration` 0.3, `volume` 0.5. The fast drop in pitch is what reads as a thump.
+- **Falling zap**: `waveform` 3, `frequency` 880, `sweepOn` 1, `frequencyEnd` 220, `sweepTime` 0.25,
+  `duration` 0.35, `endLevelOn` 1, `endLevel` 0.01, `volume` 0.2. This is the engine's own exemplar.
+- **Rising pickup**: `waveform` 1, `frequency` 600, `sweepOn` 1, `frequencyEnd` 1200, `sweepTime` 0.1,
+  `duration` 0.2, `volume` 0.15. A square carries more energy than a sine at the same `volume`, so it
+  starts lower.
+
+**Formulas and modulation.** `apply_formula` works on a Subtractive seed (it needs a layer with a
+pitch). It seeds from `frequency`, and it transposes `frequency` and `frequencyEnd` together, so a sweep
+keeps its shape. New formula layers use the seed's engine and carry its source only, not its effects or
+LFOs. Every Subtractive param can be an LFO target (`source.<key>`). `duration`, `sweepTime`, `endLevelOn`,
+and `sweepOn` are read once at the start of a render, so an LFO on them sets a fixed offset and does not
+move them within a sound.
 
 ## Layering — composite sounds (the multi-voice edge)
 
