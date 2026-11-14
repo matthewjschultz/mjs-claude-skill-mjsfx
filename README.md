@@ -1,6 +1,6 @@
 # mjsfx-sound-design — Claude Code skill
 
-A Claude Code skill that makes Claude genuinely good at designing game sound effects with
+A Claude Code skill that makes Claude genuinely good at designing sounds and effects with
 [MJSFX](https://mjsfx.app) through its MCP tools — both reproducing the classic SFX canon
 (coins, lasers, explosions, jumps, power-ups, UI blips, cohesive families) and inventing
 original, experimental sounds and textures.
