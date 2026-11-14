@@ -121,8 +121,8 @@ add layers (`compose` keeps each input layer's engine).
 
 **What Subtractive is for.** A clean single-oscillator tone set in real units (Hz and seconds), with an
 exponential decay and an optional pitch sweep. Reach for it for clean one-shots: UI blips, chimes, sine
-thumps, tonal hits, and pure pitch sweeps. Stay on sfxr for chip character: slides, arpeggios, filters,
-noise, duty cycle, and retro grit. Subtractive has no filter, noise, or arpeggio yet.
+thumps, tonal hits, filtered tones, and pure pitch sweeps. Stay on sfxr for chip character: slides, arpeggios,
+noise, duty cycle, and retro grit. Subtractive has a filter (below) but no noise or arpeggio yet.
 
 **Its params** (read `param_reference`, section "Engine: subtractive", for the live ranges):
 - `waveform`: 0 sine, 1 square, 2 triangle, 3 sawtooth.
@@ -136,6 +136,18 @@ noise, duty cycle, and retro grit. Subtractive has no filter, noise, or arpeggio
   against the layer's own engine, so an sfxr key such as `baseFreq` is rejected on a Subtractive layer;
   call `describe` to see the layer's keys and values.
 
+**The filter.** One filter per layer, applied to the raw oscillator before `volume` and the decay.
+- `filterOn` (0 or 1) turns it on. Off, the sound is exactly as it was without a filter.
+- `filterType`: 0 low-pass, 1 high-pass, 2 band-pass. `cutoff` is 20 to 19999 Hz. `q` is the resonance,
+  0.5 to 20 (default 0.7071, no peak); above about 4 the filter rings near the cutoff and the output can
+  clip, so check the `render_wav` peak.
+- Sweep: with `filterSweepOn` 1, the cutoff moves from `cutoff` to `cutoffEnd` over `cutoffTime` seconds
+  (0.001 to 10), then holds. `cutoffCurve` 0 is exponential (equal octaves per second), 1 is linear.
+- Turning the filter on applies the defaults at once (low-pass, 1000 Hz, Q 0.7071), which darkens a
+  sawtooth or square.
+- LFOs move `cutoff`, `cutoffEnd`, and `q` within a sound. `filterOn`, `filterType`, `filterSweepOn`,
+  `cutoffCurve`, and `cutoffTime` are read once at the start, so an LFO on them sets a fixed offset.
+
 **Starting points.** Each is a one-layer `blank_sound(engine: "subtractive")` followed by `set_params`.
 Treat them as places to start and judge by ear and by the `render_wav` peak:
 - **UI blip**: `waveform` 0, `frequency` 1200, `duration` 0.08, `volume` 0.3. The default decay makes it
@@ -146,6 +158,13 @@ Treat them as places to start and judge by ear and by the `render_wav` peak:
   `duration` 0.3, `volume` 0.5. The fast drop in pitch is what reads as a thump.
 - **Falling zap**: `waveform` 3, `frequency` 880, `sweepOn` 1, `frequencyEnd` 220, `sweepTime` 0.25,
   `duration` 0.35, `endLevelOn` 1, `endLevel` 0.01, `volume` 0.2. This is the engine's own exemplar.
+- **Resonant pluck**: `waveform` 3, `frequency` 220, `duration` 0.4, `volume` 0.3, `filterOn` 1,
+  `filterType` 0, `cutoff` 3000, `q` 6, `filterSweepOn` 1, `cutoffEnd` 300, `cutoffTime` 0.08,
+  `cutoffCurve` 0. A bright attack that closes fast and rings once, which is the shape of a plucked
+  string. A starting point; judge by ear.
+- **Swept zap**: `waveform` 3, `frequency` 440, `duration` 0.3, `volume` 0.2, `filterOn` 1,
+  `filterType` 2, `cutoff` 4000, `q` 3, `filterSweepOn` 1, `cutoffEnd` 300, `cutoffTime` 0.25. The
+  band-pass falls through the harmonics while the pitch stays put.
 - **Rising pickup**: `waveform` 1, `frequency` 600, `sweepOn` 1, `frequencyEnd` 1200, `sweepTime` 0.1,
   `duration` 0.2, `volume` 0.15. A square carries more energy than a sine at the same `volume`, so it
   starts lower.
