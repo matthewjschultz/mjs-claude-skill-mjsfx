@@ -1,7 +1,7 @@
 {
   "name": "mjsfx-sound-design",
   "description": "Design retro / 8-bit sounds and effects (and invent original ones) with the MJSFX app through its MCP tools \u2014 coins, lasers, explosions, jumps, power-ups, UI blips, cohesive sound families, and experimental textures",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": {
     "name": "Matthew Schultz"
   },

@@ -120,15 +120,20 @@ A layer's engine is fixed once the layer exists, and there is no tool that chang
 add layers (`compose` keeps each input layer's engine).
 
 **What Subtractive is for.** A clean single-oscillator tone set in real units (Hz and seconds), with an
-exponential decay and an optional pitch sweep. Reach for it for clean one-shots: UI blips, chimes, sine
+attack, an exponential or linear decay, and an optional pitch sweep. Reach for it for clean one-shots: UI blips, chimes, sine
 thumps, tonal hits, filtered tones, and pure pitch sweeps. Stay on sfxr for chip character: slides, arpeggios,
-noise, duty cycle, and retro grit. Subtractive has a filter (below) but no noise or arpeggio yet.
+duty cycle, and retro grit. Subtractive has a filter and White noise (below) but no arpeggio and no colored noise.
 
 **Its params** (read `param_reference`, section "Engine: subtractive", for the live ranges):
-- `waveform`: 0 sine, 1 square, 2 triangle, 3 sawtooth.
+- `waveform`: 0 sine, 1 square, 2 triangle, 3 sawtooth, 4 White. White is flat-spectrum noise with no pitch:
+  `frequency` and the sweep do nothing to it, and `apply_formula` cannot seed from it. Each layer keeps its
+  own noise, so a White sound renders the same every time, and `random_sound` rolls a new one.
 - `frequency` (10 to 20000 Hz) and `duration` (0.001 to 10 s). `volume` is linear, 0 to 1 (default 0.2).
 - Envelope: with `endLevelOn` 0 the sound decays 60 dB over `duration`. With `endLevelOn` 1, `endLevel`
   is the absolute level it reaches at the end, independent of `volume`; above `volume` it swells.
+- `attack` (0 to 10 s, default 0) ramps the level up from silence before the decay. The decay then runs
+  over what is left of `duration`, so keep `attack` well under `duration`; at or past it the sound only
+  rises. `linearDecay` 0 is the exponential decay, 1 is a straight line to the end level.
 - Sweep: with `sweepOn` 1, the pitch glides exponentially (equal octaves per second) from `frequency`
   to `frequencyEnd` over `sweepTime`, then holds. Keep `sweepTime` at or under `duration`, or the glide
   never finishes before the sound does.
@@ -165,6 +170,13 @@ Treat them as places to start and judge by ear and by the `render_wav` peak:
 - **Swept zap**: `waveform` 3, `frequency` 440, `duration` 0.3, `volume` 0.2, `filterOn` 1,
   `filterType` 2, `cutoff` 4000, `q` 3, `filterSweepOn` 1, `cutoffEnd` 300, `cutoffTime` 0.25. The
   band-pass falls through the harmonics while the pitch stays put.
+- **Soft pad swell**: `waveform` 0, `frequency` 220, `duration` 1.2, `volume` 0.3, `attack` 0.5,
+  `linearDecay` 1, `endLevelOn` 1, `endLevel` 0.02. The level rises over half a second, then falls in a
+  straight line. Layer a second voice a fifth up (`frequency` 330, `volume` 0.15) for width.
+- **Filtered noise hit**: `waveform` 4, `duration` 0.15, `volume` 0.4, `filterOn` 1, `filterType` 0,
+  `cutoff` 6000, `q` 1, `filterSweepOn` 1, `cutoffEnd` 400, `cutoffTime` 0.12. White noise with the
+  low-pass closing fast reads as a thud or a snare body. Raise `cutoff` for more air; check the
+  `render_wav` peak.
 - **Rising pickup**: `waveform` 1, `frequency` 600, `sweepOn` 1, `frequencyEnd` 1200, `sweepTime` 0.1,
   `duration` 0.2, `volume` 0.15. A square carries more energy than a sine at the same `volume`, so it
   starts lower.
