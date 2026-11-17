@@ -112,9 +112,9 @@ the character.** The "why" matters more than exact numbers — explain it as you
 
 Direction of pitch is near-universal grammar: **up = positive/reward, down = damage/loss.**
 
-## Engines: sfxr and Subtractive
+## Engines: sfxr, Subtractive, and Particle
 
-Every layer has ONE source engine: `sfxr` (the default; everything above) or `subtractive`. Choose it
+Every layer has ONE source engine: `sfxr` (the default; everything above), `subtractive`, or `particle`. Choose it
 when the layer is created: `blank_sound(engine: "subtractive")` or `random_sound(engine: "subtractive")`.
 A layer's engine is fixed once the layer exists, and there is no tool that changes it. To mix engines,
 add layers (`compose` keeps each input layer's engine).
@@ -122,12 +122,15 @@ add layers (`compose` keeps each input layer's engine).
 **What Subtractive is for.** A clean single-oscillator tone set in real units (Hz and seconds), with an
 attack, an exponential or linear decay, and an optional pitch sweep. Reach for it for clean one-shots: UI blips, chimes, sine
 thumps, tonal hits, filtered tones, and pure pitch sweeps. Stay on sfxr for chip character: slides, arpeggios,
-duty cycle, and retro grit. Subtractive has a filter and White noise (below) but no arpeggio and no colored noise.
+duty cycle, and retro grit. Subtractive has two filters, 23 waves (every sfxr wave plus White), and no arpeggio.
 
 **Its params** (read `param_reference`, section "Engine: subtractive", for the live ranges):
-- `waveform`: 0 sine, 1 square, 2 triangle, 3 sawtooth, 4 White. White is flat-spectrum noise with no pitch:
-  `frequency` and the sweep do nothing to it, and `apply_formula` cannot seed from it. Each layer keeps its
-  own noise, so a White sound renders the same every time, and `random_sound` rolls a new one.
+- `waveform` (0 to 22): 0 sine, 1 square, 2 triangle, 3 sawtooth, 4 White, then the sfxr waves from 5 (Noise)
+  through 9 (Staircase, the app's wave 10) to 22 (Henon, wave 23); `param_reference` lists each wave's own
+  shape keys. White, Pink, and Brown have no pitch: `frequency` and the sweep do nothing to them, and
+  `apply_formula` cannot seed from them. `pulseWidth` shapes Square. `seed` (0 to 999) picks a noisy wave's
+  noise, so a sound renders the same every time, and `random_sound` rolls a new one. `sweepCurve` 0 is an
+  exponential glide, 1 linear.
 - `frequency` (10 to 20000 Hz) and `duration` (0.001 to 10 s). `volume` is linear, 0 to 1 (default 0.2).
 - Envelope: with `endLevelOn` 0 the sound decays 60 dB over `duration`. With `endLevelOn` 1, `endLevel`
   is the absolute level it reaches at the end, independent of `volume`; above `volume` it swells.
@@ -141,9 +144,10 @@ duty cycle, and retro grit. Subtractive has a filter and White noise (below) but
   against the layer's own engine, so an sfxr key such as `baseFreq` is rejected on a Subtractive layer;
   call `describe` to see the layer's keys and values.
 
-**The filter.** One filter per layer, applied to the raw oscillator before `volume` and the decay.
+**The filters.** Two filters per layer (`filter2*` and `cutoff2*` repeat the keys below), applied to the raw oscillator before `volume` and the decay.
 - `filterOn` (0 or 1) turns it on. Off, the sound is exactly as it was without a filter.
-- `filterType`: 0 low-pass, 1 high-pass, 2 band-pass. `cutoff` is 20 to 19999 Hz. `q` is the resonance,
+- `filterType`: 0 low-pass, 1 high-pass, 2 band-pass, 3 notch, 4 peak (`filterGain`, -24 to 24 dB, sets the peak's
+  boost or cut). `filterSlope` 0 is 12 dB, 1 is 24 dB. `filterTrack` (0 to 1) makes the cutoff follow the pitch. `cutoff` is 20 to 19999 Hz. `q` is the resonance,
   0.5 to 20 (default 0.7071, no peak); above about 4 the filter rings near the cutoff and the output can
   clip, so check the `render_wav` peak.
 - Sweep: with `filterSweepOn` 1, the cutoff moves from `cutoff` to `cutoffEnd` over `cutoffTime` seconds
@@ -180,6 +184,27 @@ Treat them as places to start and judge by ear and by the `render_wav` peak:
 - **Rising pickup**: `waveform` 1, `frequency` 600, `sweepOn` 1, `frequencyEnd` 1200, `sweepTime` 0.1,
   `duration` 0.2, `volume` 0.15. A square carries more energy than a sine at the same `volume`, so it
   starts lower.
+
+**Particle: crackle, pops, rain, fire.** `blank_sound(engine: "particle")` plays one short tone `count`
+times (1 to 1000), with start times scattered over `spread` seconds and bunched by `skew`. The tone is a
+Subtractive tone under the same keys (default: a 12 ms band-passed White click), so design it first with
+`set_params` on `waveform`, `duration`, `cutoff`, and the rest. Then shape the burst: `seed` reshuffles it,
+and `pitchVar` (semitones), `durVar`, `volVar` (dB), and `cutVar` (octaves) vary each particle off the tone.
+`single` 1 plays the tone once, which is how to audition the tone alone. Starting points, judged by ear and
+by the `render_wav` peak:
+- **Crackle**: the defaults. Raise `count` and shorten `spread` for denser.
+- **Rain**: two layers, `compose`d. One Particle layer tops out at 1000 particles, which still reads as
+  separate clicks, so a held Subtractive hiss carries the wash: `waveform` 6 (pink), `duration` 3, `attack` 0.25,
+  `linearDecay` 1, `endLevelOn` 1, `endLevel` 0.25, `volume` 0.35, `filterOn` 1, `filterType` 0, `cutoff` 5000,
+  `filter2On` 1, `filter2Type` 1, `cutoff2` 250. The drops ride on top as a Particle layer: `count` 160, `spread` 2.8, `skew` 1,
+  `waveform` 6, `duration` 0.008, `durVar` 0.5, `volume` 0.7, `cutoff` 2500, `q` 1.2, `cutVar` 1.2, `volVar` 18.
+- **Single pop**: `count` 1, `waveform` 0, `frequency` 500, `sweepOn` 1, `frequencyEnd` 1500, `sweepTime` 0.025,
+  `duration` 0.035, `volume` 0.5, `filterOn` 0. A short rising sine reads as a bubble popping. The default
+  band-pass would starve the sine, so it is off.
+- **Embers**: `count` 25, `spread` 4, `skew` 2, `cutoff` 1500, `durVar` 0.9, `volVar` 14.
+Every param is an LFO target. The burst's own keys are read once at the start of a render, and the tone's keys
+are read per particle, so an LFO on `cutoff` sweeps across the burst. `apply_formula` seeds from a Particle
+layer only when its tone has a pitch.
 
 **Formulas and modulation.** `apply_formula` works on a Subtractive seed (it needs a layer with a
 pitch). It seeds from `frequency`, and it transposes `frequency` and `frequencyEnd` together, so a sweep
